@@ -8,6 +8,7 @@ from qdrant_client import QdrantClient
 from meddocass.config import Settings, get_settings
 from meddocass.datastore import Datastore
 from meddocass.indexer import Indexer
+from meddocass.retriever import Retriever
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
@@ -36,3 +37,12 @@ def get_datastore() -> Datastore:
 
 
 DatastoreDep = Annotated[Datastore, Depends(get_datastore)]
+
+
+@lru_cache
+def get_retriever() -> Retriever:
+    s = get_settings()
+    return Retriever(get_datastore(), top_k=s.top_k, min_score=s.min_score)
+
+
+RetrieverDep = Annotated[Retriever, Depends(get_retriever)]

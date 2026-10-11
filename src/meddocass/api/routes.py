@@ -3,10 +3,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
-from meddocass.api.schemas import DocumentSummary, HealthResponse
+from meddocass.api.schemas import DocumentSummary, HealthResponse, SearchRequest, SearchResponse
 from meddocass.config import Settings
 from meddocass.datastore import DocumentInfo
-from meddocass.dependencies import DatastoreDep, IndexerDep, SettingsDep, get_indexer, get_settings
+from meddocass.dependencies import (
+    DatastoreDep,
+    IndexerDep,
+    RetrieverDep,
+    SettingsDep,
+    get_indexer,
+    get_settings,
+)
 from meddocass.indexer import IndexedDocument, Indexer, IndexingError, UnsupportedFileTypeError
 
 router = APIRouter()
@@ -57,6 +64,14 @@ def upload_document(
         doc_id=doc.doc_id, filename=doc.filename, pages=doc.pages, chunks=len(doc.chunks)
     )
 
+
 @router.get("/documents")
 def list_documents(datastore: DatastoreDep) -> list[DocumentInfo]:
     return datastore.list_documents()
+
+
+@router.post("/search")
+def search(body: SearchRequest, retriever: RetrieverDep) -> SearchResponse:
+    return SearchResponse(
+        results=retriever.retrieve(body.query, top_k=body.top_k, doc_ids=body.doc_ids)
+    )

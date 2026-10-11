@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_cache_dir: str = ".cache/fastembed"
 
+    top_k: int = 5
+    min_score: float = 0.0
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
