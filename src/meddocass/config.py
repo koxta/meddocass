@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +18,12 @@ class Settings(BaseSettings):
 
     top_k: int = 5
     min_score: float = 0.0
+
+    llm_model: str = "anthropic:claude-haiku-5-5"
+    llm_temperature: float | None = None
+    llm_max_tokens: int = 4000
+    llm_timeout_s: float = 120
+    anthropic_api_key: SecretStr | None = None
 
 @lru_cache
 def get_settings() -> Settings:

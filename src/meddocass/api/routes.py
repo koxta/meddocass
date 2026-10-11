@@ -3,17 +3,25 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
-from meddocass.api.schemas import DocumentSummary, HealthResponse, SearchRequest, SearchResponse
+from meddocass.api.schemas import (
+    AskRequest,
+    DocumentSummary,
+    HealthResponse,
+    SearchRequest,
+    SearchResponse,
+)
 from meddocass.config import Settings
 from meddocass.datastore import DocumentInfo
 from meddocass.dependencies import (
     DatastoreDep,
+    GeneratorDep,
     IndexerDep,
     RetrieverDep,
     SettingsDep,
     get_indexer,
     get_settings,
 )
+from meddocass.generator import Answer, GenerationError
 from meddocass.indexer import IndexedDocument, Indexer, IndexingError, UnsupportedFileTypeError
 
 router = APIRouter()
@@ -75,3 +83,14 @@ def search(body: SearchRequest, retriever: RetrieverDep) -> SearchResponse:
     return SearchResponse(
         results=retriever.retrieve(body.query, top_k=body.top_k, doc_ids=body.doc_ids)
     )
+
+
+@router.post("/ask")
+def ask(body: AskRequest, retriever: RetrieverDep, generator: GeneratorDep) -> Answer:
+    hits = retriever.retrieve(body.question, top_k=body.top_k, doc_ids=body.doc_ids)
+    try:
+        return generator.generate(body.question, hits)
+    except GenerationError as exc:
+        raise HTTPException(
+            502, "LLM failed to produce an answer. Please try again."
+        ) from exc
