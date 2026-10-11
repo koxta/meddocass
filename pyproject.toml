@@ -20,3 +20,12 @@ build-backend = "uv_build"
 dev = [
     "ruff>=0.17.0",
 ]
+
+[tool.fastapi]
+entrypoint = "meddocass.main:app"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
