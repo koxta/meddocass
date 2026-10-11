@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medical Document Assistant</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <h1>Medical Document Assistant</h1>
+
+  <h2>Documents</h2>
+  <input id="upload" type="file" accept=".pdf,.txt">
+  <p id="status"></p>
+  <ul id="documents"></ul>
+
+  <h2>Ask</h2>
+  <form id="ask">
+    <input name="question" required>
+    <button>Ask</button>
+  </form>
+  <div id="answer"></div>
+</body>
+</html>

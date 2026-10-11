@@ -1,0 +1,21 @@
+body {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 0 16px;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  color-scheme: light dark;
+}
+
+form {
+  display: flex;
+  gap: 8px;
+}
+
+form input {
+  flex: 1;
+}
+
+#answer li {
+  opacity: 0.7;
+}

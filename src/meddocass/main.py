@@ -4,6 +4,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 
 from meddocass.api.routes import router
 from meddocass.config import get_settings
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Medical Document Assistant", version="0.1.0", lifespan=lifespan)
 app.include_router(router)
+app.mount("/", StaticFiles(directory="web", html=True))
 
 
 @app.middleware("http")
