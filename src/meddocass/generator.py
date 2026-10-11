@@ -1,7 +1,12 @@
+import logging
+import time
+
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, Field
 
 from meddocass.datastore import ScoredChunk
+
+logger = logging.getLogger(__name__)
 
 SNIPPET_CHARS = 300
 NOT_FOUND = "The uploaded documents don't contain information to answer this question."
@@ -62,7 +67,8 @@ class Answer(BaseModel):
 
 class Generator:
     def __init__(self, llm: BaseChatModel, model_name: str) -> None:
-        self._llm = llm.with_structured_output(LLMAnswer, method="json_schema")
+        # include_raw keeps the raw message, for token usage
+        self._llm = llm.with_structured_output(LLMAnswer, method="json_schema", include_raw=True)
         self._model_name = model_name
 
     def generate(self, question: str, hits: list[ScoredChunk]) -> Answer:
@@ -77,13 +83,30 @@ class Generator:
             ("system", SYSTEM_PROMPT),
             ("human", USER_PROMPT.format(context=build_context(hits), question=question)),
         ]
+        start = time.perf_counter()
         try:
-            parsed: LLMAnswer = self._llm.invoke(messages)
+            result = self._llm.invoke(messages)
         except Exception as exc:
             raise GenerationError(f"LLM call failed: {exc}") from exc
+        parsed: LLMAnswer | None = result["parsed"]
+        if parsed is None:
+            raise GenerationError(f"LLM output didn't match the schema: {result['parsing_error']}")
 
         # dedupe, drop ids that don't match a source
         cited = [i for i in dict.fromkeys(parsed.source_ids) if 1 <= i <= len(hits)]
+        usage = result["raw"].usage_metadata or {}
+        # No question or answer text in the logs: it may contain patient data.
+        logger.info(
+            "answered model=%s sources=%d cited=%s answerable=%s "
+            "tokens_in=%s tokens_out=%s in %.0f ms",
+            self._model_name,
+            len(hits),
+            cited,
+            parsed.answerable,
+            usage.get("input_tokens"),
+            usage.get("output_tokens"),
+            (time.perf_counter() - start) * 1000,
+        )
         return Answer(
             answer=parsed.answer,
             answerable=parsed.answerable,

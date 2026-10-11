@@ -20,6 +20,14 @@ class Retriever:
         query = " ".join(question.split())  # collapse whitespace and newlines
         if not query:
             raise ValueError("question must not be empty")
+        start = time.perf_counter()
         hits = self._datastore.search(query, limit=top_k or self._top_k, doc_ids=doc_ids)
         kept = [h for h in hits if h.score >= self._min_score]
+        logger.info(
+            "retrieved hits=%d kept=%d top_score=%.3f in %.0f ms",
+            len(hits),
+            len(kept),
+            hits[0].score if hits else 0.0,
+            (time.perf_counter() - start) * 1000,
+        )
         return kept

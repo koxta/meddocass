@@ -10,3 +10,5 @@ wheels/
 .venv
 
 .env
+# the embedding model download
+.cache/

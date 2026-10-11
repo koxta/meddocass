@@ -1,10 +1,13 @@
 import hashlib
+import logging
 from io import BytesIO
 from pathlib import Path
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pydantic import BaseModel
 from pypdf import PdfReader
+
+logger = logging.getLogger(__name__)
 
 
 class IndexingError(ValueError):
@@ -56,6 +59,9 @@ class Indexer:
         if not chunks:
             raise IndexingError("This file can't be indexed.")
 
+        logger.info(
+            "indexed %s doc_id=%s pages=%d chunks=%d", filename, doc_id, len(pages), len(chunks)
+        )
         return IndexedDocument(
             doc_id=doc_id, filename=filename, pages=len(pages), chunks=chunks
         )

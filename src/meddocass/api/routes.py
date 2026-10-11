@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Annotated
 
@@ -23,6 +24,8 @@ from meddocass.dependencies import (
 )
 from meddocass.generator import Answer, GenerationError
 from meddocass.indexer import IndexedDocument, Indexer, IndexingError, UnsupportedFileTypeError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -91,6 +94,7 @@ def ask(body: AskRequest, retriever: RetrieverDep, generator: GeneratorDep) -> A
     try:
         return generator.generate(body.question, hits)
     except GenerationError as exc:
+        logger.warning("generation failed: %s", exc)
         raise HTTPException(
             502, "LLM failed to produce an answer. Please try again."
         ) from exc

@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastembed import TextEmbedding
@@ -6,6 +7,7 @@ from qdrant_client import QdrantClient, models
 
 from meddocass.indexer import Chunk
 
+logger = logging.getLogger(__name__)
 
 class ScoredChunk(BaseModel):
     chunk: Chunk
@@ -25,6 +27,7 @@ class Datastore:
         self._embedder = embedder
 
     def ensure_collection(self) -> None:
+        """Create the collection on first start, with an index on every field we filter by."""
         if self._client.collection_exists(self._collection):
             return
         self._client.create_collection(
@@ -33,12 +36,18 @@ class Datastore:
                 size=self._embedder.embedding_size, distance=models.Distance.COSINE
             ),
         )
+        # doc_id: search/delete/count filters. chunk_index: list_documents scrolls chunk_index == 0.
         self._client.create_payload_index(
-            self._collection, "doc_id", models.PayloadSchemaType.KEYWORD
+            collection_name=self._collection,
+            field_name="doc_id",
+            field_schema=models.PayloadSchemaType.KEYWORD,
         )
         self._client.create_payload_index(
-            self._collection, "chunk_index", models.PayloadSchemaType.INTEGER
+            collection_name=self._collection,
+            field_name="chunk_index",
+            field_schema=models.PayloadSchemaType.INTEGER,
         )
+        logger.info("created collection %s", self._collection)
 
     def add(self, chunks: list[Chunk]) -> None:
         for doc_id in {chunk.doc_id for chunk in chunks}:
@@ -52,6 +61,7 @@ class Datastore:
             for c, v in zip(chunks, vectors)
         ]
         self._client.upsert(collection_name=self._collection, points=points, wait=True)
+        logger.info("stored %d chunks", len(points))
 
     def search(self, query: str, limit: int, doc_ids: list[str] | None = None) -> list[ScoredChunk]:
         vector = next(iter(self._embedder.query_embed(query)))
