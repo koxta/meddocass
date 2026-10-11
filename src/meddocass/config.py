@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     chunk_overlap: int = 150
     max_upload_mb: int = 20
 
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "meddocass_docs"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_cache_dir: str = ".cache/fastembed"
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

@@ -2,8 +2,11 @@ from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends
+from fastembed import TextEmbedding
+from qdrant_client import QdrantClient
 
 from meddocass.config import Settings, get_settings
+from meddocass.datastore import Datastore
 from meddocass.indexer import Indexer
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -16,3 +19,20 @@ def get_indexer() -> Indexer:
 
 
 IndexerDep = Annotated[Indexer, Depends(get_indexer)]
+
+
+@lru_cache
+def get_datastore() -> Datastore:
+    settings = get_settings()
+    datastore = Datastore(
+        client=QdrantClient(url=settings.qdrant_url),
+        collection=settings.qdrant_collection,
+        embedder=TextEmbedding(
+            model_name=settings.embedding_model, cache_dir=settings.embedding_cache_dir
+        ),
+    )
+    datastore.ensure_collection()
+    return datastore
+
+
+DatastoreDep = Annotated[Datastore, Depends(get_datastore)]
